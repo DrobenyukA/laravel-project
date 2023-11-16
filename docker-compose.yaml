@@ -3,23 +3,27 @@ version: "3.8"
 services: 
   server:
     platform: linux/x86_64
-    image: 'nginx:stable-alpine'
+    build:
+    # since this particuler dockerfile is coping files from the host machine
+      context: .
+      dockerfile: setup/server.dockerfile
     ports: 
       - 8888:80
-    volumes: 
-      - ./src:/var/www/html
-      - ./configs/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # volumes: 
+    #   - ./src:/var/www/html
+    #   - ./configs/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - php
       - mysql
 
   php:
     build:
-      context: ./setup
-      dockerfile: php.dockerfile
-    volumes:
+      context: .
+      dockerfile: setup/php.dockerfile
+    # Commented because we are preparing for deployment
+    # volumes:
+    #   - ./src:/var/www/html:delegated
     # :delegated referes as optimization for file system changes
-      - ./src:/var/www/html:delegated
     depends_on:
       - mysql
 
@@ -30,7 +34,7 @@ services:
       - 3306:3306
     env_file:
       - ./env/mysql.env
-
+# Utility containers:
   composer:
     build: 
       context: ./setup
@@ -40,8 +44,8 @@ services:
   
   artisan:
     build: 
-      context: ./setup
-      dockerfile: php.dockerfile
+      context: .
+      dockerfile: setup/php.dockerfile
     volumes:
       - ./src:/var/www/html
     entrypoint: ["php", "/var/www/html/artisan"]
